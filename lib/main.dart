@@ -3,15 +3,38 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isDarkTheme = false;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: _isDarkTheme ? ThemeData.dark() : ThemeData.light(),
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
-        appBar: AppBar(title: Text('Network Scanner')),
+        appBar: AppBar(
+          title: Text('Network Scanner'),
+          actions: [
+            IconButton(
+              icon: Icon(_isDarkTheme ? Icons.light_mode : Icons.dark_mode),
+              onPressed: _toggleTheme,
+            ),
+          ],
+        ),
         body: NetworkScanner(),
       ),
     );
+  }
+
+  void _toggleTheme() {
+    setState(() {
+      _isDarkTheme = !_isDarkTheme;
+    });
   }
 }
 
@@ -22,9 +45,10 @@ class NetworkScanner extends StatefulWidget {
 
 class _NetworkScannerState extends State<NetworkScanner> {
   List<String> _availableServers = [];
-  final String _subnet = '192.168.0'; // Replace with your subnet
+  final TextEditingController _subnetController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
   bool _isScanning = false;
+  String _subnet = '';
 
   @override
   Widget build(BuildContext context) {
@@ -33,49 +57,76 @@ class _NetworkScannerState extends State<NetworkScanner> {
       child: Column(
         children: [
           TextField(
+            controller: _subnetController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Enter Subnet (e.g., 192.168.0)',
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (_) => _startScan(),
+          ),
+          SizedBox(height: 16),
+          TextField(
             controller: _portController,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Enter Port Number',
               border: OutlineInputBorder(),
             ),
-            onSubmitted: (_) => _scanNetwork(),
+            onSubmitted: (_) => _startScan(),
           ),
           SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _isScanning ? null : _scanNetwork,
-            child: Text(_isScanning ? 'Scanning...' : 'Scan Network'),
+            onPressed: _isScanning ? null : _startScan,
+            child: Text(_isScanning ? 'Scanning...' : 'Start Scan'),
           ),
           SizedBox(height: 16),
           Expanded(
-            child: ListView.builder(
-              itemCount: _availableServers.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text('Server found at: ${_availableServers[index]}'),
-                );
-              },
-            ),
+            child: _isScanning
+                ? Center(child: CircularProgressIndicator())
+                : _availableServers.isEmpty
+                    ? Center(child: Text('No servers found.'))
+                    : ListView.builder(
+                        itemCount: _availableServers.length,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text(
+                                'Server found at: ${_availableServers[index]}'),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _scanNetwork() async {
+  void _startScan() {
     setState(() {
+      _subnet =
+          _subnetController.text == "" ? "192.168.0" : _subnetController.text;
       _availableServers.clear();
       _isScanning = true;
     });
 
     final port = int.tryParse(_portController.text) ?? 1883;
-    List<String> servers = [];
+    _scanNetwork(port);
+  }
+
+  Future<void> _scanNetwork(int port) async {
+    final futures = <Future<bool>>[];
 
     for (int i = 1; i < 255; i++) {
       final ip = '$_subnet.$i';
-      final result = await _ping(ip, port);
-      if (result) {
-        servers.add(ip);
+      futures.add(_ping(ip, port));
+    }
+
+    final results = await Future.wait(futures);
+    final servers = <String>[];
+
+    for (int i = 0; i < results.length; i++) {
+      if (results[i]) {
+        servers.add('$_subnet.${i + 1}');
       }
     }
 
@@ -88,7 +139,7 @@ class _NetworkScannerState extends State<NetworkScanner> {
   Future<bool> _ping(String ip, int port) async {
     try {
       final socket =
-          await Socket.connect(ip, port, timeout: Duration(milliseconds: 1));
+          await Socket.connect(ip, port, timeout: Duration(milliseconds: 500));
       socket.destroy();
       return true;
     } catch (e) {
