@@ -23,18 +23,18 @@ class _NetworkScannerState extends State<NetworkScanner> {
           TextField(
             controller: _subnetController,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Enter Subnet (e.g., 192.168.0)',
               border: OutlineInputBorder(),
             ),
             onSubmitted: (_) => _startScan(),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           TextField(
             controller: _portController,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Enter Port Number',
+            decoration: const InputDecoration(
+              labelText: 'Enter Port Number (e.g., 1883)',
               border: OutlineInputBorder(),
             ),
             onSubmitted: (_) => _startScan(),

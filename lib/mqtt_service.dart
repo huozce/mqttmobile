@@ -37,10 +37,10 @@ class MqttService {
         zort = payload;
         String tag = jsonDecode(payload)["tag"].toString();
         List<String> splittedTag = tag.split("/");
-        String ID = c[0].topic;
+        List<String> id = c[0].topic.split("/");
         String value = jsonDecode(payload)["value"].toString();
         _handleMessage(
-            ID + ":" + splittedTag.last, value.isEmpty ? "Null" : value);
+            id.first + " " + splittedTag.last, value.isEmpty ? "Null" : value);
       });
     } catch (e) {
       print('Exception: $e');
