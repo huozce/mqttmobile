@@ -12,7 +12,7 @@ class MqttPage extends StatefulWidget {
 
 class _MqttPageState extends State<MqttPage> {
   final MqttService _mqttService = MqttService();
-  final Map<String, String> _subscribedData = {};
+
   String _statusMessage = 'Connecting to MQTT topics...';
 
   @override
@@ -26,14 +26,7 @@ class _MqttPageState extends State<MqttPage> {
     await _mqttService.initialize();
     bool success = true;
 
-    success &=
-        await _subscribeAndHandle('pubTopic/Application/MQTT_tags/bool1');
-    success &=
-        await _subscribeAndHandle('pubTopic/Application/MQTT_tags/bool2');
-    success &= await _subscribeAndHandle('pubTopic/Application/MQTT_tags/int1');
-    success &= await _subscribeAndHandle('pubTopic/Application/MQTT_tags/int2');
-    success &=
-        await _subscribeAndHandle('pubTopic/Application/MQTT_tags/string1');
+    success &= await _subscribeAndHandle("#");
 
     setState(() {
       _statusMessage = success
@@ -45,12 +38,12 @@ class _MqttPageState extends State<MqttPage> {
   Future<bool> _subscribeAndHandle(String topic) async {
     bool success = await _mqttService.subscribeToTopic(topic, (topic, message) {
       setState(() {
-        _subscribedData[topic] = message;
+        _mqttService.subscribedData.value[topic] = message;
       });
     });
     if (!success) {
       setState(() {
-        _subscribedData[topic] = 'Subscription failed';
+        _mqttService.subscribedData.value[topic] = 'Subscription failed';
       });
     }
     return success;
@@ -68,24 +61,30 @@ class _MqttPageState extends State<MqttPage> {
       appBar: AppBar(
         title: Text('MQTT Subscribed Topics'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(_statusMessage),
-          ),
-          Expanded(
-            child: _subscribedData.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : ListView(
-                    children: _subscribedData.entries.map((entry) {
-                      return ListTile(
-                        title: Text('${entry.key}: ${entry.value}'),
-                      );
-                    }).toList(),
-                  ),
-          ),
-        ],
+      body: ValueListenableBuilder(
+        valueListenable: _mqttService.subscribedData,
+        builder: (context, value, child) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(_statusMessage),
+              ),
+              Expanded(
+                child: _mqttService.subscribedData.value.isEmpty
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView(
+                        children: _mqttService.subscribedData.value.entries
+                            .map((entry) {
+                          return ListTile(
+                            title: Text('${entry.key}: ${entry.value}'),
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
