@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'dart:convert';
-import 'mqtt_page.dart';
 
 class MqttService {
   ValueNotifier<Map<String, String>> subscribedData = ValueNotifier({});
@@ -38,8 +37,10 @@ class MqttService {
         zort = payload;
         String tag = jsonDecode(payload)["tag"].toString();
         List<String> splittedTag = tag.split("/");
+        String ID = c[0].topic;
         String value = jsonDecode(payload)["value"].toString();
-        _handleMessage(splittedTag.last, value.isEmpty ? "Null" : value);
+        _handleMessage(
+            ID + ":" + splittedTag.last, value.isEmpty ? "Null" : value);
       });
     } catch (e) {
       print('Exception: $e');
