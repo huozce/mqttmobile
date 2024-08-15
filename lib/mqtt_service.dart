@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_visible_for_testing_member
+
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -10,11 +12,17 @@ class MqttService {
   final int port = 1883;
   String globalPayload = "";
   TextEditingController valueController = TextEditingController();
+  bool Tirnak = false;
+
   Future<void> initialize() async {
     if (client?.connectionStatus?.state == MqttConnectionState.connected) {
       return; // Already connected
     }
+    initClient();
+    await listenMessage();
+  }
 
+  void initClient() {
     client = MqttServerClient(broker, '');
     client?.port = port;
     client?.logging(on: true);
@@ -27,7 +35,9 @@ class MqttService {
         .withWillQos(MqttQos.atLeastOnce);
 
     client?.connectionMessage = connMessage;
+  }
 
+  Future<void> listenMessage() async {
     try {
       await client?.connect();
       client?.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
@@ -35,10 +45,8 @@ class MqttService {
         String payload =
             MqttPublishPayload.bytesToStringAsString(message.payload.message);
         globalPayload = payload;
-        /*String tag = jsonDecode(payload)["tag"].toString();
-        List<String> splittedTag = tag.split("/");*/
-        List<String> id = c[0].topic.split("/");
         String value = jsonDecode(payload)["value"].toString();
+
         _handleMessage(c[0].topic, value.isEmpty ? "Null" : value);
       });
     } catch (e) {
@@ -65,6 +73,7 @@ class MqttService {
     // You can implement the logic to handle the message based on the topic and tag
     // Implement additional logic as needed
     subscribedData.value.addEntries([MapEntry("$topic", "$value")]);
+    // ignore: invalid_use_of_protected_member
     subscribedData.notifyListeners();
   }
 
@@ -72,10 +81,10 @@ class MqttService {
     if (client?.connectionStatus!.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       String value = valueController.text;
-      List<String> tag = topic.split("/");
-      String atag = tag.last;
+      List<String> splitTopic = topic.split("/");
+      String tag = splitTopic.last;
       final jsonMessage =
-          '{"tag": "Application/MQTT_tags/$atag", "value":$value}';
+          '{"tag": "Application/MQTT_tags/$tag", "value":"$value"}';
       builder.addString(jsonMessage);
       client?.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
     } else {

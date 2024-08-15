@@ -68,30 +68,37 @@ class _MqttPageState extends State<MqttPage> {
         builder: (context, value, child) {
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(_statusMessage),
-              ),
+              getConnectionStatus(),
               Expanded(
-                child: _mqttService.subscribedData.value.isEmpty
-                    ? Center(child: CircularProgressIndicator())
-                    : ListView(
-                        children: _mqttService.subscribedData.value.entries
-                            .map((entry) {
-                          return ListTile(
-                            title: Text(
-                                '${entry.key.split("/").first + ":" + entry.key.split("/").last}: ${entry.value}'),
-                            onTap: () {
-                              _showPopup(context, entry.key);
-                            },
-                          );
-                        }).toList(),
-                      ),
+                child: getMessages(context),
               ),
             ],
           );
         },
       ),
+    );
+  }
+
+  Widget getMessages(BuildContext context) {
+    return _mqttService.subscribedData.value.isEmpty
+        ? Center(child: CircularProgressIndicator())
+        : ListView(
+            children: _mqttService.subscribedData.value.entries.map((entry) {
+              return ListTile(
+                title: Text(
+                    '${entry.key.split("/").first + ":" + entry.key.split("/").last}: ${entry.value}'),
+                onTap: () {
+                  _showPopup(context, entry.key);
+                },
+              );
+            }).toList(),
+          );
+  }
+
+  Padding getConnectionStatus() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(_statusMessage),
     );
   }
 
@@ -105,22 +112,33 @@ class _MqttPageState extends State<MqttPage> {
             controller: _mqttService.valueController,
           ),
           actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                // Perform some action
-                _mqttService.publishMessage(topic);
-                Navigator.of(context).pop(); // Close the dialog
-              },
-            ),
+            cancelPopUp(context),
+            okPopUp(topic, context),
           ],
         );
+      },
+    );
+  }
+
+  TextButton okPopUp(String topic, BuildContext context) {
+    return TextButton(
+      child: Text('OK'),
+      onPressed: () {
+        // Perform some action
+        if (_mqttService.valueController.text.isNotEmpty)
+          _mqttService.publishMessage(topic);
+        _mqttService.valueController.clear();
+        Navigator.of(context).pop(); // Close the dialog
+      },
+    );
+  }
+
+  TextButton cancelPopUp(BuildContext context) {
+    return TextButton(
+      child: Text('Cancel'),
+      onPressed: () {
+        _mqttService.valueController.clear();
+        Navigator.of(context).pop(); // Close the dialog
       },
     );
   }

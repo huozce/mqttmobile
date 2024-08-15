@@ -20,57 +20,60 @@ class _NetworkScannerState extends State<NetworkScanner> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          TextField(
-            controller: _subnetController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Enter Subnet (e.g., 192.168.0)',
-              border: OutlineInputBorder(),
-            ),
-            onSubmitted: (_) => _startScan(),
-          ),
+          getNetworkField(_subnetController, 'Enter Subnet (e.g., 192.168.0)'),
           const SizedBox(height: 16),
-          TextField(
-            controller: _portController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Enter Port Number (e.g., 1883)',
-              border: OutlineInputBorder(),
-            ),
-            onSubmitted: (_) => _startScan(),
-          ),
+          getNetworkField(_portController, 'Enter Port Number (e.g., 1883)'),
           SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _isScanning ? null : _startScan,
-            child: Text(_isScanning ? 'Scanning...' : 'Start Scan'),
-          ),
+          getScanButton(),
           SizedBox(height: 16),
           Expanded(
-            child: _isScanning
-                ? Center(child: CircularProgressIndicator())
-                : _availableServers.isEmpty
-                    ? Center(child: Text('No servers found.'))
-                    : ListView.builder(
-                        itemCount: _availableServers.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(
-                                'Server found at: ${_availableServers[index]}'),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MqttPage(ip: _availableServers[index]),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+            child: getFoundServers(),
           ),
         ],
       ),
+    );
+  }
+
+  Widget getFoundServers() {
+    return _isScanning
+        ? Center(child: CircularProgressIndicator())
+        : _availableServers.isEmpty
+            ? Center(child: Text('No servers found.'))
+            : ListView.builder(
+                itemCount: _availableServers.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text('Server found at: ${_availableServers[index]}'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MqttPage(ip: _availableServers[index]),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+  }
+
+  ElevatedButton getScanButton() {
+    return ElevatedButton(
+      onPressed: _isScanning ? null : _startScan,
+      child: Text(_isScanning ? 'Scanning...' : 'Start Scan'),
+    );
+  }
+
+  TextField getNetworkField(TextEditingController controller, String label) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(),
+      ),
+      onSubmitted: (_) => _startScan(),
     );
   }
 
@@ -87,13 +90,15 @@ class _NetworkScannerState extends State<NetworkScanner> {
   }
 
   Future<void> _scanNetwork(int port) async {
-    final futures = <Future<bool>>[];
+    List<Future<bool>> futures = pingIPs(port);
+    List<String> servers = await addFoundIPs(futures);
+    setState(() {
+      _availableServers = servers;
+      _isScanning = false;
+    });
+  }
 
-    for (int i = 1; i < 255; i++) {
-      final ip = '$_subnet.$i';
-      futures.add(_ping(ip, port));
-    }
-
+  Future<List<String>> addFoundIPs(List<Future<bool>> futures) async {
     final results = await Future.wait(futures);
     final servers = <String>[];
 
@@ -103,11 +108,17 @@ class _NetworkScannerState extends State<NetworkScanner> {
         // Vibration.vibrate(duration: 55);
       }
     }
+    return servers;
+  }
 
-    setState(() {
-      _availableServers = servers;
-      _isScanning = false;
-    });
+  List<Future<bool>> pingIPs(int port) {
+    final futures = <Future<bool>>[];
+
+    for (int i = 1; i < 255; i++) {
+      final ip = '$_subnet.$i';
+      futures.add(_ping(ip, port));
+    }
+    return futures;
   }
 
   Future<bool> _ping(String ip, int port) async {
