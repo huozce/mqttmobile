@@ -29,9 +29,11 @@ class _MqttPageState extends State<MqttPage> {
     success &= await _subscribeAndHandle("#");
 
     setState(() {
-      _statusMessage = success
-          ? 'Connected to all topics successfully!'
-          : 'Failed to connect to some topics.';
+      if (success) {
+        _statusMessage = 'Connected to all topics successfully!';
+      } else {
+        _statusMessage = 'Failed to connect to some topics.';
+      }
     });
   }
 
@@ -77,7 +79,11 @@ class _MqttPageState extends State<MqttPage> {
                         children: _mqttService.subscribedData.value.entries
                             .map((entry) {
                           return ListTile(
-                            title: Text('${entry.key}: ${entry.value}'),
+                            title: Text(
+                                '${entry.key.split("/").first + ":" + entry.key.split("/").last}: ${entry.value}'),
+                            onTap: () {
+                              _showPopup(context, entry.key);
+                            },
                           );
                         }).toList(),
                       ),
@@ -86,6 +92,36 @@ class _MqttPageState extends State<MqttPage> {
           );
         },
       ),
+    );
+  }
+
+  void _showPopup(BuildContext context, String topic) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enter Value'),
+          content: TextField(
+            controller: _mqttService.valueController,
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                // Perform some action
+                _mqttService.publishMessage(topic);
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

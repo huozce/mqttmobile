@@ -8,8 +8,8 @@ class MqttService {
   MqttServerClient? client;
   String broker = ''; // To be set dynamically
   final int port = 1883;
-  String zort = "";
-
+  String globalPayload = "";
+  TextEditingController valueController = TextEditingController();
   Future<void> initialize() async {
     if (client?.connectionStatus?.state == MqttConnectionState.connected) {
       return; // Already connected
@@ -34,13 +34,12 @@ class MqttService {
         MqttPublishMessage message = c[0].payload as MqttPublishMessage;
         String payload =
             MqttPublishPayload.bytesToStringAsString(message.payload.message);
-        zort = payload;
-        String tag = jsonDecode(payload)["tag"].toString();
-        List<String> splittedTag = tag.split("/");
+        globalPayload = payload;
+        /*String tag = jsonDecode(payload)["tag"].toString();
+        List<String> splittedTag = tag.split("/");*/
         List<String> id = c[0].topic.split("/");
         String value = jsonDecode(payload)["value"].toString();
-        _handleMessage(
-            id.first + " " + splittedTag.last, value.isEmpty ? "Null" : value);
+        _handleMessage(c[0].topic, value.isEmpty ? "Null" : value);
       });
     } catch (e) {
       print('Exception: $e');
@@ -62,12 +61,26 @@ class MqttService {
     return false;
   }
 
-  void _handleMessage(String tag, String value) {
+  void _handleMessage(String topic, String value) {
     // You can implement the logic to handle the message based on the topic and tag
-
     // Implement additional logic as needed
-    subscribedData.value.addEntries([MapEntry("$tag", "$value")]);
+    subscribedData.value.addEntries([MapEntry("$topic", "$value")]);
     subscribedData.notifyListeners();
+  }
+
+  void publishMessage(String topic) {
+    if (client?.connectionStatus!.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      String value = valueController.text;
+      List<String> tag = topic.split("/");
+      String atag = tag.last;
+      final jsonMessage =
+          '{"tag": "Application/MQTT_tags/$atag", "value":$value}';
+      builder.addString(jsonMessage);
+      client?.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
+    } else {
+      print('Client is not connected');
+    }
   }
 
   void disconnect() {
