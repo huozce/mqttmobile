@@ -105,7 +105,6 @@ class _NetworkScannerState extends State<NetworkScanner> {
     for (int i = 0; i < results.length; i++) {
       if (results[i]) {
         servers.add('$_subnet.${i + 1}');
-        // Vibration.vibrate(duration: 55);
       }
     }
     return servers;

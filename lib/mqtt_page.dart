@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:searchable_listview/searchable_listview.dart';
 import 'mqtt_service.dart';
 
 class MqttPage extends StatefulWidget {
@@ -79,19 +80,38 @@ class _MqttPageState extends State<MqttPage> {
     );
   }
 
+  TextEditingController cb = TextEditingController();
+
   Widget getMessages(BuildContext context) {
     return _mqttService.subscribedData.value.isEmpty
         ? Center(child: CircularProgressIndicator())
-        : ListView(
-            children: _mqttService.subscribedData.value.entries.map((entry) {
-              return ListTile(
-                title: Text(
-                    '${entry.key.split("/").first + ":" + entry.key.split("/").last}: ${entry.value}'),
-                onTap: () {
-                  _showPopup(context, entry.key);
-                },
-              );
-            }).toList(),
+        : SearchableList<MapEntry<String, String>>(
+            searchTextController: cb,
+            initialList: _mqttService.subscribedData.value.entries.toList(),
+            itemBuilder: (MapEntry<String, String> entry) => ListTile(
+              title: Text(
+                  '${entry.key.split("/").first}:${entry.key.split("/").last}: ${entry.value}'),
+              onTap: () {
+                _showPopup(context, entry.key);
+              },
+            ),
+            filter: (value) => _mqttService.subscribedData.value.entries
+                .where((entry) =>
+                    entry.key.toLowerCase().contains(value.toLowerCase()) ||
+                    entry.value.toLowerCase().contains(value.toLowerCase()))
+                .toList(),
+            emptyWidget: const Text("Empty"),
+            inputDecoration: InputDecoration(
+              labelText: "Search Topic",
+              fillColor: Colors.white,
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(
+                  color: Colors.blue,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+            ),
           );
   }
 
