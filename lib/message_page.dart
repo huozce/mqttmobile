@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:searchable_listview/searchable_listview.dart';
 import 'mqtt_service.dart';
 
-class MqttPage extends StatefulWidget {
+class MessagePage extends StatefulWidget {
   final String ip;
 
-  MqttPage({required this.ip});
+  MessagePage({required this.ip});
 
   @override
-  _MqttPageState createState() => _MqttPageState();
+  _MessagePageState createState() => _MessagePageState();
 }
 
-class _MqttPageState extends State<MqttPage> {
+class _MessagePageState extends State<MessagePage> {
   final MqttService _mqttService = MqttService();
 
   String _statusMessage = 'Connecting to MQTT topics...';
@@ -85,31 +85,27 @@ class _MqttPageState extends State<MqttPage> {
   Widget getMessages(BuildContext context) {
     return _mqttService.subscribedData.value.isEmpty
         ? Center(child: CircularProgressIndicator())
-        : SearchableList<MapEntry<String, String>>(
-            searchTextController: cb,
-            initialList: _mqttService.subscribedData.value.entries.toList(),
-            itemBuilder: (MapEntry<String, String> entry) => ListTile(
-              title: Text(
-                  '${entry.key.split("/").first}:${entry.key.split("/").last}: ${entry.value}'),
-              onTap: () {
-                _showPopup(context, entry.key);
-              },
-            ),
-            filter: (value) => _mqttService.subscribedData.value.entries
-                .where((entry) =>
-                    entry.key.toLowerCase().contains(value.toLowerCase()) ||
-                    entry.value.toLowerCase().contains(value.toLowerCase()))
-                .toList(),
-            emptyWidget: const Text("Empty"),
-            inputDecoration: InputDecoration(
-              labelText: "Search Topic",
-              fillColor: Colors.white,
-              focusedBorder: OutlineInputBorder(
-                borderSide: const BorderSide(
-                  color: Colors.blue,
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(10.0),
+        : Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SearchableList<MapEntry<String, String>>(
+              searchTextController: cb,
+              initialList: _mqttService.subscribedData.value.entries.toList(),
+              itemBuilder: (MapEntry<String, String> entry) => ListTile(
+                title: Text(
+                    '${entry.key.split("/").first}:${entry.key.split("/").last}: ${entry.value}'),
+                onTap: () {
+                  showPopup(context, entry.key);
+                },
+              ),
+              filter: (value) => _mqttService.subscribedData.value.entries
+                  .where((entry) =>
+                      entry.key.toLowerCase().contains(value.toLowerCase()) ||
+                      entry.value.toLowerCase().contains(value.toLowerCase()))
+                  .toList(),
+              emptyWidget: const Text("Empty"),
+              inputDecoration: InputDecoration(
+                labelText: "Search",
+                border: OutlineInputBorder(),
               ),
             ),
           );
@@ -122,7 +118,7 @@ class _MqttPageState extends State<MqttPage> {
     );
   }
 
-  void _showPopup(BuildContext context, String topic) {
+  void showPopup(BuildContext context, String topic) {
     showDialog(
       context: context,
       builder: (BuildContext context) {

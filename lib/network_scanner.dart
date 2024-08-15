@@ -1,6 +1,6 @@
 import 'dart:io';
+import 'package:denememqttscan/showPopUp.dart';
 import 'package:flutter/material.dart';
-import 'mqtt_page.dart';
 
 class NetworkScanner extends StatefulWidget {
   @override
@@ -45,13 +45,8 @@ class _NetworkScannerState extends State<NetworkScanner> {
                   return ListTile(
                     title: Text('Server found at: ${_availableServers[index]}'),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              MqttPage(ip: _availableServers[index]),
-                        ),
-                      );
+                      Showpopup(context, "username", "password",
+                          _availableServers[index]);
                     },
                   );
                 },

@@ -18,7 +18,10 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Network Scanner'),
+          title: Text(
+            'Byte Bazaar',
+            style: TextStyle(fontFamily: "NewAmsterdam", fontSize: 46),
+          ),
           actions: [
             IconButton(
               icon: Icon(_isDarkTheme ? Icons.light_mode : Icons.dark_mode),
