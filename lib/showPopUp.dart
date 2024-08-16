@@ -86,6 +86,7 @@ class Showpopup {
     return TextButton(
       child: Text('Cancel'),
       onPressed: () {
+        MqttService.clearControllers();
         Navigator.of(context).pop(); // Close the dialog
       },
     );

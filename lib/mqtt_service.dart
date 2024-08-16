@@ -100,7 +100,7 @@ class MqttService {
     clearControllers();
   }
 
-  void clearControllers() {
+  static void clearControllers() {
     Showpopup.controll1.clear();
     Showpopup.controll2.clear();
   }
