@@ -31,8 +31,6 @@ class MqttService {
     client?.logging(on: true);
     final connMessage = MqttConnectMessage()
         .withClientIdentifier('flutter_client')
-        .withWillTopic('willtopic')
-        .withWillMessage('Will message')
         .startClean()
         .withWillQos(MqttQos.atLeastOnce);
 
