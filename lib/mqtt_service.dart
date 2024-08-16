@@ -29,6 +29,14 @@ class MqttService {
     client = MqttServerClient(broker, '');
     client?.port = port;
     client?.logging(on: true);
+    final connMessage = MqttConnectMessage()
+        .withClientIdentifier('flutter_client')
+        .withWillTopic('willtopic')
+        .withWillMessage('Will message')
+        .startClean()
+        .withWillQos(MqttQos.atLeastOnce);
+
+    client?.connectionMessage = connMessage;
   }
 
   Future<void> listenMessage() async {
@@ -79,6 +87,7 @@ class MqttService {
       String value = valueController.text;
       List<String> splitTopic = topic.split("/");
       String tag = splitTopic.last;
+
       final jsonMessage =
           '{"tag": "Application/MQTT_tags/$tag", "value":"$value"}';
       builder.addString(jsonMessage);
