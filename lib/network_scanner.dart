@@ -87,7 +87,7 @@ class _NetworkScannerState extends State<NetworkScanner> {
       MqttService.nick =
           _nickController.text == "" ? "ahmet" : _nickController.text;
       MqttService.userPort =
-          _portController.text == null ? "1883" : _portController.text;
+          _portController.text == "" ? "1883" : _portController.text;
       _availableServers.clear();
       _isScanning = true;
     });
