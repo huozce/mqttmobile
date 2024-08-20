@@ -1,5 +1,6 @@
 // ignore_for_file: invalid_use_of_visible_for_testing_member
 
+import 'package:denememqttscan/message_page.dart';
 import 'package:denememqttscan/network_scanner.dart';
 import 'package:denememqttscan/showPopUp.dart';
 import 'package:flutter/material.dart';
@@ -9,11 +10,14 @@ import 'dart:convert';
 import 'package:denememqttscan/network_scanner.dart';
 
 class MqttService {
+  static MqttQos selectedQos = MqttQos.atLeastOnce;
   NetworkScanner _networkScanner = NetworkScanner();
   ValueNotifier<Map<String, String>> subscribedData = ValueNotifier({});
   MqttServerClient? client;
   String broker = ''; // To be set dynamically
-  final int port = 1883;
+  // final int port = zart;
+  static String nick = "";
+  static String userPort = "";
   String globalPayload = "";
   TextEditingController valueController = TextEditingController();
 
@@ -27,10 +31,13 @@ class MqttService {
 
   void initClient() {
     client = MqttServerClient(broker, '');
-    client?.port = port;
+
+    client?.clientIdentifier = nick;
+    client?.port = int.parse(userPort);
     client?.logging(on: true);
+
     final connMessage = MqttConnectMessage()
-        .withClientIdentifier('flutter_client')
+        .withClientIdentifier(client!.clientIdentifier)
         .startClean()
         .withWillQos(MqttQos.atLeastOnce);
 
@@ -88,8 +95,9 @@ class MqttService {
 
       final jsonMessage =
           '{"tag": "Application/MQTT_tags/$tag", "value":"$value"}';
+
       builder.addString(jsonMessage);
-      client?.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
+      client?.publishMessage(topic, selectedQos, builder.payload!);
     } else {
       print('Client is not connected');
     }

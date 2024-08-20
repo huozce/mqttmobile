@@ -1,10 +1,12 @@
 import 'package:denememqttscan/message_page.dart';
 import 'package:denememqttscan/mqtt_service.dart';
 import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
 
 class Showpopup {
   static TextEditingController controll1 = TextEditingController();
   static TextEditingController controll2 = TextEditingController();
+  static TextEditingController controll3 = TextEditingController();
   Showpopup(BuildContext context, String label1, String label2, String reqIP) {
     bool _isObscured2 = true;
 

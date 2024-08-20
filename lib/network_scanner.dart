@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:denememqttscan/mqtt_service.dart';
 import 'package:denememqttscan/showPopUp.dart';
 import 'package:flutter/material.dart';
 
@@ -11,8 +12,10 @@ class _NetworkScannerState extends State<NetworkScanner> {
   List<String> _availableServers = [];
   final TextEditingController _subnetController = TextEditingController();
   final TextEditingController _portController = TextEditingController();
+  final TextEditingController _nickController = TextEditingController();
   bool _isScanning = false;
   String _subnet = '';
+  String nick = "ahmet";
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +27,9 @@ class _NetworkScannerState extends State<NetworkScanner> {
           const SizedBox(height: 16),
           getNetworkField(_portController, 'Enter Port Number (e.g., 1883)'),
           SizedBox(height: 16),
+          getNetworkField(_nickController,
+              'Enter Username(Has to be different thanother clients))'),
           getScanButton(),
-          SizedBox(height: 16),
           Expanded(
             child: getFoundServers(),
           ),
@@ -45,8 +49,12 @@ class _NetworkScannerState extends State<NetworkScanner> {
                   return ListTile(
                     title: Text('Server found at: ${_availableServers[index]}'),
                     onTap: () {
-                      Showpopup(context, "username", "password",
-                          _availableServers[index]);
+                      Showpopup(
+                        context,
+                        "username",
+                        "password",
+                        _availableServers[index],
+                      );
                     },
                   );
                 },
@@ -76,6 +84,10 @@ class _NetworkScannerState extends State<NetworkScanner> {
     setState(() {
       _subnet =
           _subnetController.text == "" ? "192.168.0" : _subnetController.text;
+      MqttService.nick =
+          _nickController.text == "" ? "ahmet" : _nickController.text;
+      MqttService.userPort =
+          _portController.text == null ? "1883" : _portController.text;
       _availableServers.clear();
       _isScanning = true;
     });

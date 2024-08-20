@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
 import 'package:searchable_listview/searchable_listview.dart';
 import 'mqtt_service.dart';
 
@@ -9,6 +10,72 @@ class MessagePage extends StatefulWidget {
 
   @override
   _MessagePageState createState() => _MessagePageState();
+}
+
+String selectedValue = "";
+void dropDownCallback(MqttQos) {}
+
+class Popupgenerator extends StatefulWidget {
+  const Popupgenerator({super.key, this.mqttService, this.baslik});
+  final mqttService;
+  final baslik; //topic name
+
+  @override
+  State<Popupgenerator> createState() => _PopupgeneratorState();
+}
+
+class _PopupgeneratorState extends State<Popupgenerator> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(' Value'),
+      content: TextField(
+        controller: widget.mqttService.valueController,
+      ),
+      actions: <Widget>[
+        DropdownButton(
+          items: const [
+            DropdownMenuItem(child: Text("Qos0"), value: MqttQos.atMostOnce),
+            DropdownMenuItem(child: Text("Qos1"), value: MqttQos.atLeastOnce),
+            DropdownMenuItem(child: Text("Qos2"), value: MqttQos.exactlyOnce),
+          ],
+          value: MqttService.selectedQos,
+          onChanged: (value) {
+            setState(() {
+              if (value != null) MqttService.selectedQos = value;
+            });
+          },
+        ),
+        cancelPopUp(context),
+        okPopUp(widget.baslik, context),
+      ],
+    );
+    ;
+  }
+
+  TextButton okPopUp(String topic, BuildContext context) {
+    return TextButton(
+      child: Text('OK'),
+      onPressed: () {
+        // Perform some action
+        if (widget.mqttService.valueController.text.isNotEmpty)
+          widget.mqttService.publishMessage(topic);
+        widget.mqttService.valueController.clear();
+        Navigator.of(context).pop(); // Close the dialog
+      },
+    );
+  }
+
+//Cancel Butonu
+  TextButton cancelPopUp(BuildContext context) {
+    return TextButton(
+      child: Text('Cancel'),
+      onPressed: () {
+        widget.mqttService.valueController.clear();
+        Navigator.of(context).pop(); // Close the dialog
+      },
+    );
+  }
 }
 
 class _MessagePageState extends State<MessagePage> {
@@ -27,18 +94,19 @@ class _MessagePageState extends State<MessagePage> {
     await _mqttService.initialize();
     bool success = true;
 
-    success &= await _subscribeAndHandle("#");
+    success &= await _subscribeAndHandle("#"); //Subsribes to all topics
 
     setState(() {
       if (success) {
         _statusMessage = 'Connected to all topics successfully!';
       } else {
-        _statusMessage = 'Failed to connect to some topics.';
+        _statusMessage = 'Failed to connect to topics.';
       }
     });
   }
 
   Future<bool> _subscribeAndHandle(String topic) async {
+    //state of the connection
     bool success = await _mqttService.subscribeToTopic(topic, (topic, message) {
       setState(() {
         _mqttService.subscribedData.value[topic] = message;
@@ -71,7 +139,11 @@ class _MessagePageState extends State<MessagePage> {
             children: [
               getConnectionStatus(),
               Expanded(
-                child: getMessages(context),
+                child: Messages(
+                  mqttService: _mqttService,
+                  cb: cb,
+                  showPopUp: showPopup,
+                ),
               ),
             ],
           );
@@ -82,22 +154,62 @@ class _MessagePageState extends State<MessagePage> {
 
   TextEditingController cb = TextEditingController();
 
-  Widget getMessages(BuildContext context) {
-    return _mqttService.subscribedData.value.isEmpty
+  Padding getConnectionStatus() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(_statusMessage),
+    );
+  }
+
+  void showPopup(BuildContext context, MapEntry<String, String> entry) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Popupgenerator(
+          mqttService: _mqttService,
+          baslik: entry.key,
+        );
+      },
+    );
+  }
+
+//OK Butonu
+}
+
+class Messages extends StatefulWidget {
+  const Messages(
+      {super.key, required this.mqttService, this.cb, this.showPopUp});
+  final MqttService mqttService;
+  final showPopUp;
+  final cb;
+
+  @override
+  State<Messages> createState() => _MessagesState();
+}
+
+class _MessagesState extends State<Messages> {
+  @override
+  Widget build(BuildContext context) {
+    return widget.mqttService.subscribedData.value.isEmpty
         ? Center(child: CircularProgressIndicator())
         : Padding(
             padding: const EdgeInsets.all(8.0),
             child: SearchableList<MapEntry<String, String>>(
-              searchTextController: cb,
-              initialList: _mqttService.subscribedData.value.entries.toList(),
-              itemBuilder: (MapEntry<String, String> entry) => ListTile(
-                title: Text(
-                    '${entry.key.split("/").first}:${entry.key.split("/").last}: ${entry.value}'),
-                onTap: () {
-                  showPopup(context, entry.key);
-                },
-              ),
-              filter: (value) => _mqttService.subscribedData.value.entries
+              searchTextController: widget.cb,
+              initialList:
+                  widget.mqttService.subscribedData.value.entries.toList(),
+              itemBuilder: (MapEntry<String, String> entry) =>
+                  !(entry.value == 'Subscription failed')
+                      ? ListTile(
+                          title: Text(
+                              '${entry.key.split("/").first}:${entry.key.split("/").last}: ${entry.value}'),
+                          onTap: () {
+                            // if (!(entry.value == 'Subscription failed'))
+                            widget.showPopUp(context, entry);
+                          },
+                        )
+                      : Text(entry.value),
+              filter: (value) => widget.mqttService.subscribedData.value.entries
                   .where((entry) =>
                       entry.key.toLowerCase().contains(value.toLowerCase()) ||
                       entry.value.toLowerCase().contains(value.toLowerCase()))
@@ -109,53 +221,5 @@ class _MessagePageState extends State<MessagePage> {
               ),
             ),
           );
-  }
-
-  Padding getConnectionStatus() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Text(_statusMessage),
-    );
-  }
-
-  void showPopup(BuildContext context, String topic) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Enter Value'),
-          content: TextField(
-            controller: _mqttService.valueController,
-          ),
-          actions: <Widget>[
-            cancelPopUp(context),
-            okPopUp(topic, context),
-          ],
-        );
-      },
-    );
-  }
-
-  TextButton okPopUp(String topic, BuildContext context) {
-    return TextButton(
-      child: Text('OK'),
-      onPressed: () {
-        // Perform some action
-        if (_mqttService.valueController.text.isNotEmpty)
-          _mqttService.publishMessage(topic);
-        _mqttService.valueController.clear();
-        Navigator.of(context).pop(); // Close the dialog
-      },
-    );
-  }
-
-  TextButton cancelPopUp(BuildContext context) {
-    return TextButton(
-      child: Text('Cancel'),
-      onPressed: () {
-        _mqttService.valueController.clear();
-        Navigator.of(context).pop(); // Close the dialog
-      },
-    );
   }
 }
