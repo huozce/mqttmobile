@@ -23,7 +23,7 @@ class MqttService {
   TextEditingController valueController = TextEditingController();
 
   static String messageTag = "";
-  static bool isTopicGood = true;
+
   static String TopicTest = "";
 
   Future<void> initialize() async {
@@ -55,15 +55,11 @@ class MqttService {
       client?.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
         messageTag = parseMessage(c, "tag");
         TopicTest = c[0].topic;
-        if (!TopicTest.contains(messageTag)) {
-          isTopicGood = false;
-        } else {
-          isTopicGood = true;
-        }
+
         String value = parseMessage(c, "value");
 
-        _handleMessage("${c[0].topic.split("/").first} $messageTag",
-            value.isEmpty ? "Null" : value, isTopicGood);
+        _handleMessage(
+            "${c[0].topic} $messageTag", value.isEmpty ? "Null" : value);
       });
     } catch (e) {
       print('Exception: $e');
@@ -92,23 +88,23 @@ class MqttService {
     return false;
   }
 
-  void _handleMessage(String topic, String value, bool isTopicGood_Handle) {
+  void _handleMessage(String topic, String value) {
     // You can implement the logic to handle the message based on the topic and tag
     // Implement additional logic as needed
-    subscribedData.value
-        .addEntries([MapEntry("$topic", "$value/$isTopicGood_Handle")]);
+    subscribedData.value.addEntries([MapEntry("$topic", "$value")]);
     // ignore: invalid_use_of_protected_member
     subscribedData.notifyListeners();
   }
 
-  void publishMessage(String topic, bool isTopicGood_publishMessage) {
+  void publishMessage(
+    String topic,
+  ) {
     if (client?.connectionStatus!.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       String value = valueController.text;
 
-      topic = topic.replaceAll(" ", "/");
-      String tag = topic.split("/").sublist(1).join("/");
-      if (!isTopicGood_publishMessage) topic = topic.split("/").first;
+      String tag = topic.split(" ").last;
+      topic = topic.split(" ").first;
 
       final jsonMessage = '{"tag": "$tag", "value":"$value"}';
 

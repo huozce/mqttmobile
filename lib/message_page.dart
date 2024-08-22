@@ -17,14 +17,13 @@ String selectedValue = "";
 void dropDownCallback(MqttQos) {}
 
 class Popupgenerator extends StatefulWidget {
-  const Popupgenerator(
-      {super.key,
-      this.mqttService,
-      this.baslik,
-      required this.isTopicGood_PopupGenerator});
+  const Popupgenerator({
+    super.key,
+    this.mqttService,
+    this.baslik,
+  });
   final mqttService;
   final baslik; //topic name
-  final bool isTopicGood_PopupGenerator;
 
   @override
   State<Popupgenerator> createState() => _PopupgeneratorState();
@@ -53,20 +52,19 @@ class _PopupgeneratorState extends State<Popupgenerator> {
           },
         ),
         cancelPopUp(context),
-        okPopUp(widget.baslik, context, widget.isTopicGood_PopupGenerator),
+        okPopUp(widget.baslik, context),
       ],
     );
     ;
   }
 
-  TextButton okPopUp(
-      String topic, BuildContext context, bool isTopicGood_okPopup) {
+  TextButton okPopUp(String topic, BuildContext context) {
     return TextButton(
       child: Text('OK'),
       onPressed: () {
         // Perform some action
         if (widget.mqttService.valueController.text.isNotEmpty)
-          widget.mqttService.publishMessage(topic, isTopicGood_okPopup);
+          widget.mqttService.publishMessage(topic);
         widget.mqttService.valueController.clear();
         Navigator.of(context).pop(); // Close the dialog
       },
@@ -175,8 +173,6 @@ class _MessagePageState extends State<MessagePage> {
         return Popupgenerator(
           mqttService: _mqttService,
           baslik: entry.key,
-          isTopicGood_PopupGenerator:
-              entry.value.split("/").last.toLowerCase() == 'true',
         );
       },
     );
