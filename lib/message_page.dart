@@ -1,3 +1,4 @@
+import 'package:denememqttscan/showPopUp.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:searchable_listview/searchable_listview.dart';
@@ -16,9 +17,14 @@ String selectedValue = "";
 void dropDownCallback(MqttQos) {}
 
 class Popupgenerator extends StatefulWidget {
-  const Popupgenerator({super.key, this.mqttService, this.baslik});
+  const Popupgenerator(
+      {super.key,
+      this.mqttService,
+      this.baslik,
+      required this.isTopicGood_PopupGenerator});
   final mqttService;
   final baslik; //topic name
+  final bool isTopicGood_PopupGenerator;
 
   @override
   State<Popupgenerator> createState() => _PopupgeneratorState();
@@ -47,19 +53,20 @@ class _PopupgeneratorState extends State<Popupgenerator> {
           },
         ),
         cancelPopUp(context),
-        okPopUp(widget.baslik, context),
+        okPopUp(widget.baslik, context, widget.isTopicGood_PopupGenerator),
       ],
     );
     ;
   }
 
-  TextButton okPopUp(String topic, BuildContext context) {
+  TextButton okPopUp(
+      String topic, BuildContext context, bool isTopicGood_okPopup) {
     return TextButton(
       child: Text('OK'),
       onPressed: () {
         // Perform some action
         if (widget.mqttService.valueController.text.isNotEmpty)
-          widget.mqttService.publishMessage(topic);
+          widget.mqttService.publishMessage(topic, isTopicGood_okPopup);
         widget.mqttService.valueController.clear();
         Navigator.of(context).pop(); // Close the dialog
       },
@@ -168,6 +175,8 @@ class _MessagePageState extends State<MessagePage> {
         return Popupgenerator(
           mqttService: _mqttService,
           baslik: entry.key,
+          isTopicGood_PopupGenerator:
+              entry.value.split("/").last.toLowerCase() == 'true',
         );
       },
     );
@@ -202,7 +211,8 @@ class _MessagesState extends State<Messages> {
                   !(entry.value == 'Subscription failed')
                       ? ListTile(
                           title: Text(
-                              '${entry.key.split("/").first}:${entry.key.split("/").last}: ${entry.value}'),
+                            '${entry.key.split("/").first.split(" ").first}:${entry.key.split(" ").last.split("/").last}: ${entry.value.split("/").first}',
+                          ),
                           onTap: () {
                             // if (!(entry.value == 'Subscription failed'))
                             widget.showPopUp(context, entry);

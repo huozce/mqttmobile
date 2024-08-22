@@ -12,7 +12,8 @@ import 'package:denememqttscan/network_scanner.dart';
 class MqttService {
   static MqttQos selectedQos = MqttQos.atLeastOnce;
   NetworkScanner _networkScanner = NetworkScanner();
-  ValueNotifier<Map<String, String>> subscribedData = ValueNotifier({});
+  ValueNotifier<Map<String, String>> subscribedData =
+      ValueNotifier({}); //notifies when a value changes.
   MqttServerClient? client;
   String broker = ''; // To be set dynamically
   // final int port = zart;
@@ -20,6 +21,10 @@ class MqttService {
   static String userPort = "";
   String globalPayload = "";
   TextEditingController valueController = TextEditingController();
+
+  static String messageTag = "";
+  static bool isTopicGood = true;
+  static String TopicTest = "";
 
   Future<void> initialize() async {
     if (client?.connectionStatus?.state == MqttConnectionState.connected) {
@@ -48,8 +53,17 @@ class MqttService {
     try {
       await client?.connect(Showpopup.controll1.text, Showpopup.controll2.text);
       client?.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+        messageTag = parseMessage(c, "tag");
+        TopicTest = c[0].topic;
+        if (!TopicTest.contains(messageTag)) {
+          isTopicGood = false;
+        } else {
+          isTopicGood = true;
+        }
         String value = parseMessage(c, "value");
-        _handleMessage(c[0].topic, value.isEmpty ? "Null" : value);
+
+        _handleMessage("${c[0].topic.split("/").first} $messageTag",
+            value.isEmpty ? "Null" : value, isTopicGood);
       });
     } catch (e) {
       print('Exception: $e');
@@ -78,23 +92,25 @@ class MqttService {
     return false;
   }
 
-  void _handleMessage(String topic, String value) {
+  void _handleMessage(String topic, String value, bool isTopicGood_Handle) {
     // You can implement the logic to handle the message based on the topic and tag
     // Implement additional logic as needed
-    subscribedData.value.addEntries([MapEntry("$topic", "$value")]);
+    subscribedData.value
+        .addEntries([MapEntry("$topic", "$value/$isTopicGood_Handle")]);
     // ignore: invalid_use_of_protected_member
     subscribedData.notifyListeners();
   }
 
-  void publishMessage(String topic) {
+  void publishMessage(String topic, bool isTopicGood_publishMessage) {
     if (client?.connectionStatus!.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       String value = valueController.text;
-      List<String> splitTopic = topic.split("/");
-      String tag = splitTopic.last;
 
-      final jsonMessage =
-          '{"tag": "Application/MQTT_tags/$tag", "value":"$value"}';
+      topic = topic.replaceAll(" ", "/");
+      String tag = topic.split("/").sublist(1).join("/");
+      if (!isTopicGood_publishMessage) topic = topic.split("/").first;
+
+      final jsonMessage = '{"tag": "$tag", "value":"$value"}';
 
       builder.addString(jsonMessage);
       client?.publishMessage(topic, selectedQos, builder.payload!);

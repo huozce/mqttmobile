@@ -27,8 +27,7 @@ class _NetworkScannerState extends State<NetworkScanner> {
           const SizedBox(height: 16),
           getNetworkField(_portController, 'Enter Port Number (e.g., 1883)'),
           SizedBox(height: 16),
-          getNetworkField(_nickController,
-              'Enter Username(Has to be different thanother clients))'),
+          getNetworkField(_nickController, 'Enter Username'),
           getScanButton(),
           Expanded(
             child: getFoundServers(),
