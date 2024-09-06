@@ -3,12 +3,17 @@ import 'package:denememqttscan/mqtt_service.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 
+// Bu bölümde açılan popupın içi ve işlevleri gösterilmiştir.
+//Kullanıcı adı ve şifre girilen popup burada gösterilmiştir.
+
 class Showpopup {
   static TextEditingController controll1 = TextEditingController();
   static TextEditingController controll2 = TextEditingController();
   static TextEditingController controll3 = TextEditingController();
   Showpopup(BuildContext context, String label1, String label2, String reqIP) {
-    bool _isObscured2 = true;
+    //label 1 ve label 2 kullanıcı adı ve şifreyi temsil eder.reqIp ise bağlanılan serverı temsil eder.
+    bool _isObscured2 =
+        true; //Şifre gösteriminin yıldızlı olup olmamasıyla ilgili değişkenin ilkin ataması
 
     showDialog(
       context: context,
@@ -24,7 +29,8 @@ class Showpopup {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextField(
-                        controller: controll1,
+                        controller:
+                            controll1, //control1 e kullanıcı adı girilmektedir dolayısıyla labeltext olarak da label1 de username yazmaktadır.
                         keyboardType: TextInputType.text,
                         decoration: InputDecoration(
                           labelText: label1,
@@ -33,7 +39,8 @@ class Showpopup {
                       ),
                       SizedBox(height: 16),
                       TextField(
-                        controller: controll2,
+                        controller:
+                            controll2, // control 2 ye şifre girilir dolayısıyla yıldızlı gösterilmesi uygun görülmüştür.label2 de password yazmaktadır.
                         keyboardType: TextInputType.text,
                         obscureText: _isObscured2,
                         decoration: InputDecoration(
@@ -69,6 +76,7 @@ class Showpopup {
   }
 
   TextButton okPopUp(BuildContext context, String reqIP) {
+    //Popup'daki ok butonu ne işe yarar
     return TextButton(
       child: Text('OK'),
       onPressed: () {
@@ -79,12 +87,12 @@ class Showpopup {
             builder: (context) => MessagePage(ip: reqIP),
           ),
         );
-        // Perform some action// Close the dialog
       },
     );
   }
 
   TextButton cancelPopUp(BuildContext context) {
+    //Popup'daki cancel butonu ne işe yarar
     return TextButton(
       child: Text('Cancel'),
       onPressed: () {
