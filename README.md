@@ -1,16 +1,3 @@
-# denememqttscan
+This project allows you to query all IPs within a specified port and subnet, and then shows whether a user is performing any operations on the found ports. If an MQTT broker is found, its information can be entered to establish a connection. Once connected, all topics are subscribed to automatically. Messages written in JSON format are displayed on a newly opened page, parsed in the format topic:tag:value.
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+A JSON message like {"tag":"bool1","value":"true"} is shown as topic:tag:value. Clicking on any message allows you to send it back to the broker in the same {"tag":"example1","value":"true"} JSON format, with the option to modify its values. In the "Send message" section, messages can be written and sent in any desired format. However, only messages written in JSON format can be displayed for now.
